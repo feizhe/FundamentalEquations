@@ -1,2 +1,5 @@
 # FundamentalEquations
-Fundamental equations linking methylation dynamics to maximum lifespan in mammals
+
+Codes and softwares for the paper "Fundamental equations linking methylation dynamics to maximum lifespan in mammals."
+
+
