@@ -2838,3 +2838,511 @@ ggsave(paste0("SuppFig_Weight_",vnum, "_species.pdf"),
 
 
 
+
+
+## Figure S9-S10
+
+
+```{r}
+library(ggplot2)
+xlab = "PIC of Lifespan"
+ylab = "PIC of AROCM"
+ARtitle = c(outer(c("AROCM","AdjAROCM"),c("","_Young","_Old"), paste0))
+ARtitle
+
+
+ar1 = read.csv("PGM/AROCM_BivProm2. phyloEWAS.results.csv",
+               row.names = 1)
+
+cor1 = with(ar1, cor.test(Lifespan,slopes))
+cor1$estimate
+
+ggplot(ar1, aes(Lifespan,slopes)) +
+  geom_point() + geom_smooth(method = "lm") +
+  labs(title = ARtitle[1], 
+       subtitle = paste0("cor=",round(cor1$estimate,2),
+                      ", p=",signif(cor1$p.value,2)), 
+       x=xlab, y=ylab)  +
+  theme_bw() 
+  # theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+```{r}
+pname = "PGM/"
+AROCM_files = list.files(path = pname, pattern = "phyloEWAS")
+AROCM_files
+fileorder = c(4,1,6,3,5,2)
+
+ARtitle
+```
+
+
+```{r}
+p_pgm = list()
+for (k in 1:6) {
+  
+  ar1 = read.csv(paste0(pname,AROCM_files[fileorder[k]]),
+               row.names = 1)
+  
+  tit1 = paste0(ARtitle[k], ", N=", nrow(ar1) )
+  
+
+  cor1 = with(ar1, cor.test(Lifespan,slopes))
+  # cor1$estimate
+  
+  p_pgm[[k]] = ggplot(ar1, aes(Lifespan,slopes)) +
+    geom_point() + geom_smooth(method = "lm") +
+    labs(title = paste0(letters[k],". ", tit1),
+         subtitle = paste0("cor=",round(cor1$estimate,2),
+                        ", p=",signif(cor1$p.value,2)), 
+         x=xlab, y=ylab)  +
+    theme_bw() 
+
+}
+ p_pgm[[k]]
+```
+
+```{r}
+library(gridExtra)
+
+ggsave(
+  "PGM/AROCM_PIC_v2.pdf",
+  grid.arrange(grobs = p_pgm, ncol=3, nrow=2, as.table = FALSE),
+  width = 10, height = 6
+)
+```
+
+
+
+
+## Figure S11-S12
+
+```{r}
+SpeciesMat = read.csv("/Users/feiz/Documents/Box Sync/Horvath/Mammalian meth projects/Slope/out_AROCM_0.1L/states/Slopes_mapped_v1.csv",
+                      row.names = 1, check.names = FALSE)
+
+len1 = "Mapped"
+# source("slope_strata_v2.R")
+# dim(slopes_mat)
+slopes_mat = SpeciesMat%>%select(contains(len1),
+                                 maxAgeCaesar,SpeciesLatinName,Tissue)
+
+colnames(slopes_mat)
+slopes_mat = slopes_mat[,-(1:5)]
+
+
+```
+
+### ragemat
+```{r}
+ragemat = matslopes%>%select(contains("rage"))
+sd_ragemat = ragemat%>%select(contains("sd_rage"))
+colnames(sd_ragemat)
+# k=1
+# l=11
+# sdrage = sd_ragemat[,l]
+
+```
+
+
+### Lifespan (nj=12)
+
+```{r}
+## outfolder = "Fig6_AROCM"
+colnames(SpeciesMat)[1:16]
+colnames(SpeciesMat)[10:12] = c("GT", "ASM","Lifespan")
+dim(SpeciesMat)
+dim(slopes_mat)
+colnames(slopes_mat)
+
+identical(SpeciesMat$SpeciesLatinName, slopes_mat$SpeciesLatinName)
+
+```
+
+```{r}
+nj = 12 ## Lifespan ##  10:GT 11:ASM
+colnames(SpeciesMat)[nj] = "Lifespan"
+
+colnames(slopes_mat)[1:13] = substring(colnames(slopes_mat)[1:13],7)
+```
+
+### Choose power
+
+```{r}
+len1
+matslopes = read.csv(paste0("/Users/feiz/Documents/Box Sync/Horvath/Mammalian meth projects/Slope/out_AROCM_0.1L/states/Slopes_mapped_maplist.csv"), 
+                     row.names = 1)
+
+# colnames(matslopes)
+cormat = matslopes%>%select(contains("cor_"))
+colnames(cormat)
+cormat = cormat[,-(1:2)]
+sd_ragemat = matslopes%>%select(contains("sd_rage"))
+colnames(sd_ragemat)
+```
+
+
+```{r}
+k = 10 ## AROCM
+datall = data.frame(
+  matslopes%>%
+    select(SpeciesLatinName,Tissue,Freq,
+           MammalNumberHorvath,maxAgeCaesar),
+  AROCM = matslopes$YoungSlope1,
+  cors = cormat[, k],
+  sd_rage = sd_ragemat[, k])
+colnames(datall)
+hist(datall$sd_rage)
+```
+
+```{r}
+
+ggplot(datall,aes(1/maxAgeCaesar, AROCM))+
+  geom_point()
+
+datfilter = datplot = datall%>%filter(sd_rage> 0.04)
+
+ggplot(datplot,aes(1/maxAgeCaesar, AROCM))+
+  geom_point()
+
+
+```
+
+- species level
+```{r}
+library(plyr)
+datplot = datall%>%filter(!is.na(AROCM))
+colnames(datplot)
+ncs = 5:8
+dat2 = combineTissues(datplot, idx1 = 1:nrow(datplot), nc = ncs)
+dat2freq = plyr::ddply(datplot, "SpeciesLatinName", function(dat1){
+  sum(dat1$Freq)
+})
+colnames(dat2freq)[2] = "Freq"
+dat2 = merge(dat2, dat2freq)
+
+ggplot(dat2,aes(1/maxAgeCaesar, AROCM))+
+  geom_point()
+
+```
+
+
+```{r}
+# datplot = dat2
+# datplot = datfilter
+range(datplot$sd_rage)
+
+pvec = c(0:40)*0.05
+CV = QCOD = Cor_SD_Rage = NULL
+for (p in pvec) {
+  adjROC = datplot$AROCM * (datplot$sd_rage)^(1 - p)
+  adjCor = datplot$cors / (datplot$sd_rage)^p
+  
+  CV = c(CV, sd(adjCor)/mean(adjCor))
+  QCOD = c(QCOD, qcod(adjCor) )
+  
+  Cor_SD_Rage = c(Cor_SD_Rage, cor(adjCor, datplot$sd_rage) )
+}
+adj_pmat = data.frame(
+  pvec,
+  CV,
+  QCOD,
+  Cor_SD_Rage
+)
+# View(adj_pmat)
+```
+
+
+```{r}
+write.csv(adj_pmat, 
+          paste0("../out_AROCM_0.1L/adjROC_select_power_",len1, ".csv"))
+
+# adj_pmat_st = adj_pmat
+```
+
+#### supp plot other chromatin states
+
+```{r}
+colnames(adj_pmat)
+mp = max(abs(adj_pmat$CV))/max(abs(adj_pmat$Cor_SD_Rage))
+
+pw_mapped = ggplot(adj_pmat) +   ## %>%filter(pvec> -0.5)
+  geom_line(aes(pvec,CV, color="CV")) +
+  geom_line(aes(pvec,QCOD, color="QCOD") ) +
+  geom_line(aes(pvec,Cor_SD_Rage*mp, color="Cor(Adj.Cor,SD)")) +
+  geom_hline(yintercept = 0,linetype=2) +
+  geom_vline(xintercept = 0,linetype=2) +
+  geom_vline(xintercept = 0.85,linetype=2,col="red") +
+  scale_color_manual(name='Measure',
+                     breaks=c('CV', 'QCOD', 'Cor(Adj.Cor,SD)'),
+                     values=c('black', 'blue', 'purple'))+
+  xlab("Power") + ggtitle("b. Mammalian data") +
+  scale_y_continuous(name = "CV/QCOD",
+                     sec.axis = sec_axis(~ ./mp, name = "Cor")) +
+  theme_bw() + theme(legend.position = "") 
+
+pw_mapped
+```
+
+
+```{r}
+pdf(paste0("../out_AROCM_0.1L/adjROC_select_power_",len1,".pdf"),
+    width = 4.5, height = 4.5)
+pw_mapped
+dev.off()
+
+```
+
+### Excluding outliers
+
+```{r}
+###### new text
+textnum = c("1.1.1","4.11.1","9.9.1","12.3.10", ## "9.9.3",
+            "5.1.1", "1.4.1","6.1.1", "2.1.1", "8.4.5" )
+
+pw = 0.5
+len1 = "Mapped"
+
+SpeciesMat$RemoveFei[SpeciesMat$MammalNumberHorvath %in%
+                       c("6.1.2")] = 1
+
+SpeciesMat$RemoveFei[SpeciesMat$MammalNumberHorvath %in%
+                       c("4.13.3") & SpeciesMat$Tissue=="Skin"] = 1
+
+
+```
+
+
+```{r}
+kk=1
+p_mapped = list()
+titlesize = 10
+# for(k in c(10,1,11)){
+for(k in c(10)){
+  
+  sname = ifelse(k==10, "AROCM",
+                 ifelse(k==11, "Old AROCM", "Young AROCM"))
+  # sname = len1
+  
+  prop = ifelse(k<= 10, props[k], oldprops[k-10])
+  tit1 = ifelse(k<= 10, paste0(", (0, ",props[k],"*Lifespan)"), 
+                paste0(", (Maturity, Lifespan)"))
+  
+  if(k<= 10){
+    idx1 = which(!is.na(slopes_mat[,k]) & slopes_mat[,k]<10 &
+                   # slopes_mat[,k] > -0.9 &
+                   SpeciesMat$RemoveFei==0 
+                   # SpeciesMat$ageRangeL< matratio  & 
+                   # & SpeciesMat$ageRangeU >= min(prop,0.6) 
+                 )
+    
+  }else {
+    sdrage = sd_ragemat[,k]
+    idx1 = which(!is.na(slopes_mat[,k]) & slopes_mat[,k]<10 &
+                   slopes_mat[,k] > -0.1 &
+                   SpeciesMat$RemoveFei==0 &
+                   !is.na(sdrage) & sdrage>= 0.06  )
+    
+  }
+  
+  ncs = 1:14 ###c(k, grep("maxAgeCaesar",colnames(slopes_mat)))
+  speciesSlopes = combineTissues(slopes_mat, idx1, ncs)
+  
+  x = speciesSlopes[,15]
+  y = speciesSlopes[,1+k]
+  # y = logplus(y)
+  # y = y - min(y) + 1
+  speciesSlopes$y = y
+  speciesSlopes$x = x
+  xlim = range(speciesSlopes$x)*c(0.7, 1.2)
+  
+  cor1test = with(speciesSlopes,cor.test(x,y))
+  cor1 = signif(cor1test$estimate, 2)
+  pv1 = signif(cor1test$p.value,2)
+  
+  coef1 = coef(lm(y~x, data = speciesSlopes))
+  
+  speciesSlopes$textidx = 
+    speciesSlopes$MammalNumberHorvath %in% textnum
+  mytitle = paste0(letters[kk],". ", len1,
+                   ", Cor=",cor1, ", p=",pv1)  
+  
+  p1 = ggplot(speciesSlopes, 
+              aes_string(y = "y", x = "x",
+                         label = "MammalNumberHorvath")) +
+    geom_point(color="darkgrey") + theme_bw() +
+    scale_x_continuous(name='Lifespan', limits = xlim)+
+    scale_y_continuous(name=paste0("AROCM"))+
+    ggtitle(mytitle) +
+    theme(plot.title=element_text(size = titlesize)) +   # margin=margin(t=40,b=-30)
+    geom_text(aes(label=ifelse(textidx,
+                               MammalNumberHorvath,'')),
+              hjust=0,vjust=0) +
+    geom_hline(yintercept = 0, linetype=3)
+    # geom_abline(slope=coef1[2], intercept = coef1[1], linetype=3)
+  p_mapped[[kk]] = p1
+  kk=kk+1
+  
+  ##### panel b
+  {
+    
+    speciesSlopes$x = 1/x
+    speciesSlopes$y = y
+  
+  
+  cor1test = with(speciesSlopes,cor.test(x,y))
+  cor1 = signif(cor1test$estimate, 2)
+  pv1 = signif(cor1test$p.value,2)
+  
+  # coef1 = coef(lm(y~x, data = speciesSlopes))
+  mytitle = paste0(letters[kk],". ", len1,', N=',
+                   length(y))  ##letters[kk],". ",
+  # xr = range(c(speciesSlopes$x, speciesSlopes$y)) *c(1/2, 5)
+  xr = range(speciesSlopes$x) + c(0,0.2)
+  p1 = ggplot(speciesSlopes, 
+              aes_string(y = "y", x = "x",
+                         label = "MammalNumberHorvath")) +
+    geom_point(color="darkgrey") + theme_bw() +
+    labs(title = mytitle, subtitle = 
+           paste0("Cor=",cor1,", p=",pv1 )) +
+    xlab("1/Lifespan") + ylab("AROCM") + xlim(xr) +
+    theme(plot.title=element_text(size = titlesize),
+          plot.subtitle = element_text(size = 1.2*titlesize,
+                                       margin=margin(b=-15))) +  
+    geom_text(aes(label=ifelse(textidx,
+                               MammalNumberHorvath,'')),
+              hjust=0,vjust=0) +
+    geom_hline(yintercept = 0, linetype=3)
+    # geom_abline(slope=coef1[2], intercept = coef1[1], linetype=3)
+  p_mapped[[kk]] = p1
+  kk=kk+1
+  
+  }
+  
+  #### panel c & d
+  {
+    xmat = cbind(slopes_mat[,1:13]*sd_ragemat^pw,
+               1/SpeciesMat[,nj], slopes_mat[,14:15])
+  colnames(xmat)[14] = col2 = paste0("1/", colnames(SpeciesMat)[nj])
+  
+  ncs = 1:15 ###c(k, grep("maxAgeCaesar",colnames(slopes_mat)))
+  species_xmat = combineTissues(xmat, idx1, ncs)
+  species_xmat$textidx = species_xmat$MammalNumberHorvath %in% textnum
+  
+  ## log scale panel
+  x = species_xmat[, 16]
+  y = species_xmat[,k+1]
+  # y = logplus(y)
+  # y = y - min(y) + 1
+  
+  species_xmat$y = y  ## log(y)
+  species_xmat$x = x  ## log(x)
+  xlim = range(species_xmat$x)*c(0.95, 1.1)
+  
+  
+  cor1test = with(species_xmat, cor.test(x,y))
+  cor1 = signif(cor1test$estimate, 2)
+  pv1 = signif(cor1test$p.value,2)
+  
+  coef1 = coef(lm(y~x, data = species_xmat))
+  
+  mytitle = paste0(letters[kk],". ", len1, ", Cor=",cor1,
+                   ", p=",pv1)  ##letters[kk],". ",
+  
+  p1 = ggplot(species_xmat, 
+              aes_string(y = "y", x = "x",
+                         label = "MammalNumberHorvath")) +
+    geom_point(color="darkgrey") + theme_bw() +
+    scale_x_continuous(name='Lifespan', limits = xlim)+
+    scale_y_continuous(name=paste0('Adjusted AROCM')) +
+    ggtitle(mytitle) +
+    theme(plot.title=element_text(size = titlesize)) +   # margin=margin(t=40,b=-30)
+    geom_hline(yintercept = 0, linetype = 3) +
+    geom_text(aes(label=ifelse(textidx,
+                               MammalNumberHorvath,'')),
+              hjust=0,vjust=0) 
+  p_mapped[[kk]] = p1
+  kk=kk+1
+  
+  
+  ###
+  
+  col1 = switch (kk/4,
+                 "YoungSlope1",
+                 "YoungSlope0.1",
+                 "OldSlope1")
+  # species_xmat = species_xmat%>%filter(!is.na(species_xmat[,k+1]))
+  # colnames( species_xmat)
+  y = species_xmat[,k+1]
+  x = species_xmat[, 15]
+  
+  lm1 = lm(y~ x-1)    
+  coef1 = as.numeric(coef(lm1))
+  
+  a = round(coef1[1],2)
+  species_xmat$x = species_xmat[,15]
+  species_xmat$y = y
+  
+  cor1test = cor.test(x,y, use = 'pairwise.complete')
+  cor1 = signif(cor1test$estimate, 2)
+  pv1 = signif(cor1test$p.value,2)
+  
+  mytitle = paste0(letters[kk],". ", len1,', N=',length(y)) #,", Cor=",cor1) 
+  
+  # species_xmat$x = x
+  # species_xmat$y = y
+  xr = range(c(x)) *c(1, 1.2)
+  
+  #dlist[[kk]] = species_xmat
+  p1 = ggplot(species_xmat, 
+              aes_string(y = "y", x = "x", # y = col1, x = col2,
+                  label = "MammalNumberHorvath")) +
+    geom_point(color="darkgrey") + theme_bw() +
+    scale_x_continuous(name= paste0(col2), limits = xr) + 
+    scale_y_continuous(name=paste0('Adjusted AROCM')
+                  #, limits = xr
+                  )+
+    ggtitle(mytitle, subtitle = 
+              paste0("Cor=",cor1,", p=",pv1 )) +
+    theme(plot.title=element_text(size = titlesize),
+          plot.subtitle = element_text(size = 1.2*titlesize,
+                                       margin=margin(b=-15))) + 
+    geom_text(aes(label=ifelse(textidx,
+                               MammalNumberHorvath,'')),
+              hjust=0,vjust=0) +
+    geom_hline(yintercept = 0, linetype = 3)
+  p_mapped[[kk]] = p1
+  kk=kk+1
+  }
+}
+length(p_mapped)
+p_mapped[[1]]
+```
+
+
+
+```{r}
+vnum = 'v12'
+# ggsave(paste0("Suppfig_",len1, "_pw=",pw, ".pdf"),
+ggsave(paste0("Suppfig_AROCM_",len1, "_",vnum, ".pdf"),
+       grid.arrange(p_mapped[[1]],p_mapped[[3]],
+                    p_mapped[[2]],p_mapped[[4]],
+                    nrow=2, as.table = FALSE),
+       width = 16,
+       height = 16, units = "cm")
+
+```
+
+```{r}
+vnum = 'v10'
+# ggsave(paste0("Suppfig_",len1, "_pw=",pw, ".pdf"),
+ggsave(paste0("Suppfig_AROCM_",len1, "_",vnum, ".pdf"),
+       grid.arrange(p_mapped[[1]],p_mapped[[2]],
+                    nrow=1, as.table = FALSE),
+       width = 16,
+       height = 8, units = "cm")
+```
+
+
+
