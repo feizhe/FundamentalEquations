@@ -10,6 +10,16 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
+## Prepare the data
+
+```{r}
+source("Codes_AROCM/0_fns_v2.R")
+source("Codes_AROCM/1_prepare_data.R")
+
+```
+
+
+
 ## Figure 1: Dog AROCM
 
 ```{r}
@@ -45,17 +55,12 @@ summary(m1)
 ### fit slopes
 
 ```{r}
-source("Codes_AROCM/0_fns_v2.R")
 vnum = "dog_v5"
 cex.main=1.5
 cut1 = freq = 3
 j=2
-# for (j in 1:length(statesPRC2))
 head(statesPRC2)
-```
 
-
-```{r}
 {
   cgid = cg_list[[j]]
   len1 = statesPRC2[j]
@@ -402,7 +407,6 @@ dim(stateSlopes)
 head(stateSlopes)
 # stateSlopes$Cor.Slope.Identity=NULL
 
-# head(statesTab)
 length(statesPRC2)
 ```
 
@@ -431,7 +435,8 @@ stateSlopes$CorSpearman = stateSlopes$CorLog =
 - correlations of each state
 
 ```{r}
-pdf(paste0("../",outfolder,"/SpeciesStates_corplot.pdf"), onefile = TRUE)
+pdf(paste0("../",outfolder,"/SpeciesStates_corplot.pdf"), 
+    onefile = TRUE)
 par(mfrow=c(2,2))
 ncut = 60
 for(k in 1:length(statesPRC2)){
@@ -584,7 +589,8 @@ tiss = rep("Skin", length(specs))
 - Final Figure 1
 
 ```{r}
-stateSlopes = read.csv("/Users/feiz/Documents/Box Sync/Horvath/Mammalian meth projects/Slope/MainFigures/stateSlopes_IdentityScaled.csv",row.names = 1)
+stateSlopes = read.csv("/Users/feiz/Documents/Box Sync/Horvath/Mammalian meth projects/Slope/MainFigures/stateSlopes_IdentityScaled.csv",
+                       row.names = 1)
 
 vnum = "v8"
 
